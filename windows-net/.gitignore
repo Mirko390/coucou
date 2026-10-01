@@ -2,10 +2,11 @@ bin/
 obj/
 release/
 artifacts/
+TestResults/
 *.user
 .vs/
 
-web/node_modules/
+node_modules/
 web/dist/
 *.tsbuildinfo
 

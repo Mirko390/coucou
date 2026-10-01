@@ -15,6 +15,9 @@ DerivedData/
 # iCloud stubs
 *.icloud
 
+# Visual Studio (opening the repository folder)
+.vs/
+
 # Local only (never published)
 .claude/
 _prive/

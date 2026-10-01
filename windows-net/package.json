@@ -1,0 +1,13 @@
+{
+  "name": "coucou-windows-net",
+  "private": true,
+  "description": "Coucou for Windows on .NET. These scripts are shortcuts: dotnet and MSBuild do the work, so Visual Studio and the dotnet CLI build the same thing.",
+  "scripts": {
+    "postinstall": "npm ci --prefix web",
+    "dev": "npm run dev --prefix web",
+    "start": "dotnet run --project app",
+    "build": "dotnet build Coucou.slnx",
+    "test": "dotnet test --project tests",
+    "pack": "dotnet build installer -c Release"
+  }
+}
