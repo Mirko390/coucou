@@ -332,10 +332,12 @@ function buildApproval(actions: ViewActions): ViewHost {
 
 function buildQuestion(actions: ViewActions): ViewHost {
   const who = h("div");
-  const title = h("div", { class: "title" });
-  const detail = h("div", { class: "detail" });
+  // Two lines of question and one of options at most, so the buttons always fit;
+  // the full text is in the tooltip, and the choices are made in Claude anyway.
+  const title = h("div", { class: "title clamp-2" });
+  const options = h("div", { class: "options" });
   const row = h("div", { class: "actions" });
-  const el = h("div", { class: "view" }, card("cyan", stack(116, 16, who, title, detail, row)));
+  const el = h("div", { class: "view" }, card("cyan", stack(116, 16, who, title, options, row)));
   let rowKey = "";
   return {
     el,
@@ -344,9 +346,11 @@ function buildQuestion(actions: ViewActions): ViewHost {
       who.append(agentWho(State.focusTask, t("Claude Code is asking a question")));
       const task = State.focusTask;
       title.textContent = task?.steps.at(-1) ?? t("Claude needs an answer.");
+      title.title = title.textContent;
       const q = State.pendingQuestion;
-      detail.textContent = q && q.options.length > 0 ? q.options.join(" · ") : "";
-      detail.style.display = detail.textContent ? "" : "none";
+      options.textContent = q && q.options.length > 0 ? q.options.join(" · ") : "";
+      options.title = options.textContent;
+      options.style.display = options.textContent ? "" : "none";
       // Built once per kind of row: rebuilding between mouse-down and mouse-up
       // would swallow the click.
       const key = q?.canFocus ? "focus" : "text";

@@ -624,6 +624,22 @@ body {
   color: var(--red-text);
 }
 
+/* A question's choices: one quiet line, cut with an ellipsis. */
+.options {
+  font: 400 12px var(--font);
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
 .who-row {
   display: flex;
   align-items: center;
