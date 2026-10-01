@@ -65,37 +65,43 @@ string in the pages has no entry, and a test does the same for the host.
 
 ## Updating
 
-Bump `<Version>` in `Directory.Build.props`, run `.\scripts\pack.ps1`, and open
-the new MSI. It replaces the installed version in place: Coucou is closed,
-updated and started again. Preferences, keys and the Claude Code hooks are
-kept, and nothing needs uninstalling first. The version has to go up — an MSI
-with the same version as the one installed does not replace it.
+Bump `<Version>` in `Directory.Build.props`, build the release (`npm run pack`)
+and open the new MSI. It replaces the installed version in place: Coucou is
+closed, updated and started again. Preferences, keys and the Claude Code hooks
+are kept, and nothing needs uninstalling first. The version has to go up — an
+MSI with the same version as the one installed does not replace it.
 
 ## Build it yourself
 
 You need the [.NET 10 SDK](https://dot.net), [Node 20+](https://nodejs.org), and
-the **MSVC build tools** (Visual Studio Build Tools with "Desktop development
-with C++") — the last only to compile the relay to a native exe. WebView2 ships
-with Windows 10/11.
+the **MSVC build tools** (Visual Studio or its Build Tools, with "Desktop
+development with C++") — the last only to compile the relay to a native exe.
+WebView2 ships with Windows 10/11.
+
+**In Visual Studio**, open `windows-net/Coucou.slnx` and press F5.
+
+**From the command line**, in `windows-net/`:
+
+| npm | dotnet | |
+|---|---|---|
+| `npm install` | | the pages' dependencies, in `web/` |
+| `npm start` | `dotnet run --project app` | builds and runs Coucou |
+| `npm test` | `dotnet test --project tests` | the tests — no Node or MSVC needed |
+| `npm run build` | `dotnet build Coucou.slnx` | the app, the relay and the tests |
+| `npm run pack` | `dotnet build installer -c Release` | the release, in `release/` |
+| `npm run dev` | | Vite with hot reload, for the island's looks |
+
+The npm scripts are shortcuts for the dotnet commands: Visual Studio, `dotnet`
+and `npm` all run the same MSBuild build. Building the app runs `npm ci` /
+`npm run build` in `web/` whenever a page source changed, and AOT-publishes
+`coucou-hook.exe` next to `coucou.exe` whenever the relay changed.
+`-p:SkipWeb=true` and `-p:SkipHook=true` turn either off.
+
+To work on the island's looks with hot reload, run Coucou on Vite's pages:
 
 ```powershell
-cd windows-net
-dotnet build app                        # pages, the AOT relay, and the app
-.\app\bin\Debug\net10.0-windows\coucou.exe
-dotnet test --project tests             # no npm or MSVC needed
-.\scripts\pack.ps1                      # the release, in windows-net\release\
-```
-
-`dotnet build` runs `npm ci` / `npm run build` in `web/` whenever a page source
-changed, and AOT-publishes `coucou-hook.exe` next to `coucou.exe` whenever the
-relay changed. `-p:SkipWeb=true` and `-p:SkipHook=true` turn either off.
-
-To work on the island's looks with hot reload:
-
-```powershell
-cd windows-net\web
 npm run dev                             # Vite on http://127.0.0.1:1420
-..\app\bin\Debug\net10.0-windows\coucou.exe --dev
+dotnet run --project app -- --dev       # in a second terminal
 ```
 
 `npm run dev` alone also serves the pages in an ordinary browser, and
@@ -103,7 +109,9 @@ npm run dev                             # Vite on http://127.0.0.1:1420
 
 ### Release
 
-`scripts\pack.ps1` leaves three files in `windows-net\release\`:
+`npm run pack` — that is, `dotnet build installer -c Release` — publishes the
+app afresh, builds the MSI from it and leaves three files in
+`windows-net/release/`:
 
 ```
 Coucou-Windows-X.Y.Z-x64.msi      per-user installer, versioned
@@ -112,9 +120,15 @@ Coucou-Windows-X.Y.Z-x64.zip      portable: unzip anywhere, run coucou.exe
 ```
 
 By default the app is self-contained (~42 MB installer, nothing else needed).
-`.\scripts\pack.ps1 -FrameworkDependent` builds a ~3.5 MB installer that
-needs the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
-on the machine. `-Runtime win-arm64` builds for ARM.
+Two properties change that:
+
+```powershell
+dotnet build installer -c Release -p:AppSelfContained=false   # ~3.5 MB, needs the .NET 10 Desktop Runtime
+dotnet build installer -c Release -p:AppRuntime=win-arm64     # for ARM64
+```
+
+The [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
+is the one a framework-dependent build needs on the machine.
 
 The MSI installs into `%LOCALAPPDATA%\Programs\Coucou`, adds a Start menu
 shortcut and starts Coucou. Uninstalling closes Coucou and removes what it
@@ -128,7 +142,7 @@ The version lives in one place, `Directory.Build.props`.
 The app icon and the tray icon are drawn in code, like Mochi itself:
 
 ```powershell
-cd web; npm run icons                   # regenerates app\Assets from scripts\gen-icons.mjs
+npm run icons --prefix web              # regenerates app\Assets from web\scripts\gen-icons.mjs
 ```
 
 ## Layout
@@ -146,8 +160,8 @@ windows-net/
   shared/              code compiled into both exes (the pipe name)
   web/                 the island and the settings page (TypeScript, Canvas 2D, no framework)
   tests/               MSTest
-  installer/           the MSI (WiX)
-  scripts/pack.ps1     the release build
+  installer/           the MSI (WiX), and the release build
+  package.json         npm shortcuts for the dotnet commands
 ```
 
 ### At rest, and when Claude asks something

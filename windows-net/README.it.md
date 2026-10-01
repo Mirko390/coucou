@@ -248,8 +248,8 @@ niente da configurare.
    disinstallare prima.
 
 Per chi compila: alza `<Version>` in `Directory.Build.props` prima di
-`.\scripts\pack.ps1`. Un MSI con lo stesso numero di versione di quello
-installato non lo sostituisce.
+`npm run pack`. Un MSI con lo stesso numero di versione di quello installato
+non lo sostituisce.
 
 ## Privacy e sicurezza
 
@@ -271,25 +271,41 @@ gli **MSVC build tools** (Visual Studio o Build Tools con "Sviluppo di
 applicazioni desktop con C++"). Questi ultimi servono solo per compilare il
 relay in un exe nativo.
 
+**In Visual Studio:** apri `windows-net/Coucou.slnx` e premi F5.
+
+**Da riga di comando**, nella cartella `windows-net/`:
+
+| npm | dotnet | |
+|---|---|---|
+| `npm install` | | le dipendenze delle pagine, in `web/` |
+| `npm start` | `dotnet run --project app` | compila e avvia Coucou |
+| `npm test` | `dotnet test --project tests` | i test, senza Node né MSVC |
+| `npm run build` | `dotnet build Coucou.slnx` | app, relay e test |
+| `npm run pack` | `dotnet build installer -c Release` | la release, in `release/` |
+| `npm run dev` | | Vite con ricaricamento automatico, per l'aspetto dell'isola |
+
+I comandi npm sono scorciatoie per quelli dotnet: Visual Studio, `dotnet` e
+`npm` fanno la stessa identica compilazione MSBuild.
+
+**La release:** `npm run pack` ripubblica l'app da zero, costruisce l'MSI e
+lascia in `windows-net/release/` l'installer con il numero di versione, lo
+stesso installer con un nome fisso e lo zip portabile. L'MSI predefinito è
+autonomo, circa 42 MB. Due proprietà cambiano il risultato:
+
 ```powershell
-cd windows-net
-dotnet build app                        # pagine, relay AOT e app
-.\app\bin\Debug\net10.0-windows\coucou.exe
-dotnet test --project tests             # senza npm né MSVC
-.\scripts\pack.ps1                      # la release, in windows-net\release\
+dotnet build installer -c Release -p:AppSelfContained=false   # circa 3,5 MB, richiede il .NET 10 Desktop Runtime
+dotnet build installer -c Release -p:AppRuntime=win-arm64     # per ARM64
 ```
 
-`.\scripts\pack.ps1` produce un MSI autonomo da circa 42 MB.
-`-FrameworkDependent` ne produce uno da circa 3,5 MB che richiede il
-[.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0),
-e `-Runtime win-arm64` compila per ARM.
+Il [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0)
+serve solo sul PC che installa la versione da 3,5 MB.
 
-Per lavorare sull'aspetto dell'isola con il ricaricamento automatico:
+Per lavorare sull'aspetto dell'isola con il ricaricamento automatico, avvia
+Coucou sulle pagine servite da Vite:
 
 ```powershell
-cd windows-net\web
 npm run dev                             # Vite su http://127.0.0.1:1420
-..\app\bin\Debug\net10.0-windows\coucou.exe --dev
+dotnet run --project app -- --dev       # in un secondo terminale
 ```
 
 **Aggiungere una lingua:** i testi nel codice sono in inglese e fanno anche da

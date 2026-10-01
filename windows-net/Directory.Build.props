@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   <!--
     Shared by the app, the hook relay and the tests. The version lives here and
     nowhere else: the app reports it at boot, the installer stamps it, and the
@@ -9,7 +9,7 @@
     <Product>Coucou</Product>
     <Authors>Louis Raille</Authors>
     <Company>Louis Raille</Company>
-    <Copyright>Â© Louis Raille</Copyright>
+    <Copyright>© Louis Raille</Copyright>
 
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>

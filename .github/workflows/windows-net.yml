@@ -43,13 +43,13 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/windows-net-v')
         run: |
           $tag = "${{ github.ref_name }}" -replace '^windows-net-v', ''
-          $version = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          $version = dotnet msbuild app/Coucou.csproj -getProperty:Version
           if ($tag -ne $version) { throw "tag says $tag but Directory.Build.props says $version" }
 
       - name: Test
         run: dotnet test --project tests
 
-      - name: Pack
+      - name: Build the installer
         run: |
-          ./scripts/pack.ps1
+          dotnet build installer -c Release
           Get-ChildItem release | Format-Table Name, Length

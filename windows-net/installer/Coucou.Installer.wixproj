@@ -1,15 +1,28 @@
 <Project Sdk="WixToolset.Sdk">
 
   <!--
-    The Windows installer: a per-user MSI (no admin prompt) built from the
-    published app. `scripts/pack.ps1` publishes the app and builds this.
+    The release. Building this project publishes the app, builds the per-user
+    MSI (no admin prompt) from it, and drops the installer and a portable zip
+    in windows-net/release/:
 
-      dotnet build installer -c Release -p:PublishDir=<published app>\
+      dotnet build installer -c Release                              x64, .NET included
+      dotnet build installer -c Release -p:AppRuntime=win-arm64      ARM64
+      dotnet build installer -c Release -p:AppSelfContained=false    needs the .NET 10 Desktop Runtime
+
+    `npm run pack` in windows-net/ runs the first one.
   -->
   <PropertyGroup>
     <OutputName>Coucou</OutputName>
     <OutputType>Package</OutputType>
-    <InstallerPlatform>x64</InstallerPlatform>
+    <AppRuntime Condition="'$(AppRuntime)' == ''">win-x64</AppRuntime>
+    <AppSelfContained Condition="'$(AppSelfContained)' == ''">true</AppSelfContained>
+    <AppArch>$(AppRuntime.Substring(4))</AppArch>
+    <InstallerPlatform>$(AppArch)</InstallerPlatform>
+    <AppProject>$(MSBuildProjectDirectory)\..\app\Coucou.csproj</AppProject>
+    <PublishDir Condition="'$(PublishDir)' == ''">$(MSBuildProjectDirectory)\..\artifacts\publish\$(AppRuntime)\</PublishDir>
+    <PortableDir>$(MSBuildProjectDirectory)\..\artifacts\portable\$(AppRuntime)\</PortableDir>
+    <ReleaseDir>$(MSBuildProjectDirectory)\..\release\</ReleaseDir>
+    <ReleaseName>Coucou-Windows-$(Version)-$(AppArch)</ReleaseName>
     <!-- WiX notes are advisory; the C# projects keep warnings-as-errors. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <!--
@@ -17,7 +30,6 @@
       lives in the user profile, which is the whole point.
     -->
     <SuppressIces>ICE38;ICE64;ICE91</SuppressIces>
-    <PublishDir Condition="'$(PublishDir)' == ''">$(MSBuildProjectDirectory)\..\artifacts\publish\win-x64\</PublishDir>
     <DefineConstants>Version=$(Version)</DefineConstants>
   </PropertyGroup>
 
@@ -25,5 +37,39 @@
     <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
     <BindPath Include="$(PublishDir)" BindName="publish" />
   </ItemGroup>
+
+  <!--
+    A clean publish every time, so nothing left over from an earlier build ends
+    up in the installer. The app's own build compiles the pages and the AOT relay.
+  -->
+  <Target Name="PublishApp" BeforeTargets="CoreBuild">
+    <RemoveDir Directories="$(PublishDir)" />
+    <Exec Command="dotnet publish &quot;$(AppProject)&quot; -c $(Configuration) -r $(AppRuntime) --self-contained $(AppSelfContained) -o &quot;$(PublishDir.TrimEnd('\'))&quot; -nologo" />
+    <Error Condition="!Exists('$(PublishDir)%(_RequiredFile.Identity)')"
+           Text="The published app is missing %(_RequiredFile.Identity)." />
+  </Target>
+
+  <ItemGroup>
+    <_RequiredFile Include="coucou.exe;coucou-hook.exe;wwwroot\index.html;wwwroot\settings.html" />
+  </ItemGroup>
+
+  <!--
+    The release files, named as the release workflow publishes them: the
+    versioned MSI, the same MSI under a rolling name, and the published app
+    zipped (without debug symbols) for running without installing.
+  -->
+  <Target Name="DropRelease" AfterTargets="Build">
+    <ItemGroup>
+      <_Portable Include="$(PublishDir)**\*" Exclude="$(PublishDir)**\*.pdb" />
+    </ItemGroup>
+    <RemoveDir Directories="$(PortableDir)" />
+    <Copy SourceFiles="@(_Portable)" DestinationFiles="@(_Portable->'$(PortableDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+    <MakeDir Directories="$(ReleaseDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(ReleaseDir)$(ReleaseName).msi" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(ReleaseDir)Coucou-Windows-$(AppArch).msi" />
+    <ZipDirectory SourceDirectory="$(PortableDir)" DestinationFile="$(ReleaseDir)$(ReleaseName).zip" Overwrite="true" />
+    <Message Importance="high" Text="Coucou $(Version) ($(AppRuntime)) -> $([System.IO.Path]::GetFullPath('$(ReleaseDir)'))" />
+    <Message Importance="high" Text="  $(ReleaseName).msi, Coucou-Windows-$(AppArch).msi, $(ReleaseName).zip" />
+  </Target>
 
 </Project>
