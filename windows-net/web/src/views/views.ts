@@ -25,6 +25,8 @@ export interface ViewActions {
   decide(d: "allow" | "deny"): void;
   /** Brings forward the window the questioning session runs in. */
   answerInSession(): void;
+  /** Brings the finished session's window forward, or opens its folder. */
+  openSession(): void;
   toggleSound(): void;
   setVolume(v: number): void;
   setAutoClose(seconds: number): void;
@@ -301,7 +303,8 @@ function buildEmpty(actions: ViewActions): ViewHost {
 
 function buildApproval(actions: ViewActions): ViewHost {
   const who = h("div");
-  const code = h("div", { class: "code" });
+  // The whole command, wrapped and scrolling: what is being allowed must be readable to the end.
+  const code = h("div", { class: "code scroll" });
   const row = h("div", { class: "actions" });
   const el = h("div", { class: "view" }, card("amber", stack(116, 16, who, code, row)));
   let rowKey = "";
@@ -332,9 +335,9 @@ function buildApproval(actions: ViewActions): ViewHost {
 
 function buildQuestion(actions: ViewActions): ViewHost {
   const who = h("div");
-  // Two lines of question and one of options at most, so the buttons always fit;
-  // the full text is in the tooltip, and the choices are made in Claude anyway.
-  const title = h("div", { class: "title clamp-2" });
+  // A long question scrolls and the options take one line at most, so the
+  // buttons always fit; the choices themselves are made in Claude anyway.
+  const title = h("div", { class: "title scroll" });
   const options = h("div", { class: "options" });
   const row = h("div", { class: "actions" });
   const el = h("div", { class: "view" }, card("cyan", stack(116, 16, who, title, options, row)));
@@ -346,7 +349,6 @@ function buildQuestion(actions: ViewActions): ViewHost {
       who.append(agentWho(State.focusTask, t("Claude Code is asking a question")));
       const task = State.focusTask;
       title.textContent = task?.steps.at(-1) ?? t("Claude needs an answer.");
-      title.title = title.textContent;
       const q = State.pendingQuestion;
       options.textContent = q && q.options.length > 0 ? q.options.join(" · ") : "";
       options.title = options.textContent;
@@ -374,7 +376,7 @@ function buildQuestion(actions: ViewActions): ViewHost {
 function buildError(actions: ViewActions): ViewHost {
   const who = h("div");
   const title = h("div", { class: "title", text: t("Workflow stopped.") });
-  const detail = h("div", { class: "detail" });
+  const detail = h("div", { class: "detail scroll" });
   const row = h("div", { class: "actions" },
     btn(t("Retry"), "primary", () => actions.setView(State.defaultView())),
     btn(t("Open in n8n"), "secondary", () => actions.openUrl("")),
@@ -396,18 +398,27 @@ function buildError(actions: ViewActions): ViewHost {
 
 function buildFinished(actions: ViewActions): ViewHost {
   const who = h("div");
-  const title = h("div", { class: "title" });
+  const text = h("div", { class: "scroll" });
   const row = h("div", { class: "actions" },
-    btn(t("Open project"), "primary", () => actions.openProject()),
+    btn(t("Open"), "primary", () => actions.openSession()),
     btn("OK", "secondary", () => actions.collapse()),
   );
-  const el = h("div", { class: "view" }, card("green", stack(116, 16, who, title, row)));
+  const el = h("div", { class: "view" }, card("green", stack(116, 16, who, text, row)));
+  let shown: string | null = null;
   return {
     el,
     sync() {
       clear(who);
       who.append(agentWho(State.focusTask, t("Claude Code finished")));
-      title.textContent = State.focusTask?.steps.at(-1) ?? t("Session finished");
+      // Claude's whole last message when Claude Code sent it, read like a
+      // message; otherwise the last step, as a title.
+      const reply = State.lastReply;
+      const value = reply ?? State.focusTask?.steps.at(-1) ?? t("Session finished");
+      if (value === shown) return; // keep the scroll position while reading
+      shown = value;
+      text.className = reply ? "reply scroll" : "title scroll";
+      text.textContent = value;
+      text.scrollTop = 0;
     },
   };
 }

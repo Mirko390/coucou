@@ -56,8 +56,9 @@ repository finché questa non sarà stata usata per un po'.
 
 ### Visual Studio, non solo VS Code
 
-- **"Apri il progetto"** porta la cartella della sessione nel tuo editor. Si
-  sceglie in **Impostazioni… → Generali → Apri i progetti con**:
+- **Apri il progetto**, nella scheda di Claude Code, porta la cartella della
+  sessione nel tuo editor. Si sceglie in **Impostazioni… → Generali → Apri i
+  progetti con**:
   - **Automatica:** se nella cartella c'è una soluzione (`.slnx` o `.sln`), la
     apre in Visual Studio. Altrimenti prova VS Code, poi Visual Studio.
   - **Visual Studio**, **Visual Studio Code** o **Esplora file**.
@@ -93,7 +94,30 @@ sarebbe passata senza le tue risposte.
 - **Anche per le notifiche:** il pulsante compare anche quando Claude ti fa una
   domanda con una notifica.
 - **Come trova la finestra:** il relay risale ai processi da cui è partito, e lo
-  fa solo per gli eventi che aspettano una tua risposta.
+  fa solo per gli eventi che aspettano una tua risposta e quando una sessione
+  finisce.
+
+### Fine sessione: il messaggio di Claude e «Apri»
+
+- **Il messaggio intero:** quando Claude finisce, la card mostra il suo ultimo
+  messaggio completo, ripulito dal markdown. Prima mostrava solo l'ultimo passo
+  (per esempio "Legge views.ts"). La card si allunga per farci stare circa sei
+  righe, e il resto scorre.
+- **«Apri»:** porta in primo piano la finestra della sessione: Claude Desktop, il
+  terminale o VS Code. Se la finestra non si trova, apre la cartella del progetto
+  come faceva prima "Apri il progetto".
+
+### Testi lunghi: ora scorrono
+
+Prima i testi lunghi venivano tagliati. Ora scorrono dentro la card con la
+rotella del mouse, mentre la riga in alto e i pulsanti restano sempre al loro
+posto.
+
+- **Domande:** il testo della domanda scorre, le opzioni stanno su una riga.
+- **Fine sessione:** il messaggio di Claude.
+- **Errori:** il dettaglio dell'errore.
+- **Permessi:** il comando da approvare si legge tutto, andando a capo, invece
+  di finire con i puntini. Sai sempre esattamente cosa stai consentendo.
 
 ### Chiusura automatica: 3, 5 o 10 secondi
 
@@ -160,9 +184,11 @@ vedere subito gli hook appena installati.
 **Sessioni di Claude Code**
 - Segui la sessione in tempo reale: prompt, strumenti usati passo per passo,
   errori, subagent, fine sessione.
-- Quando Claude Code chiede un permesso, l'isola si apre con il comando e i
-  pulsanti **Nega / Consenti**. Nessun permesso viene mai concesso senza un tuo
-  clic.
+- Quando Claude Code chiede un permesso, l'isola si apre con il comando
+  completo e i pulsanti **Nega / Consenti**. Nessun permesso viene mai concesso
+  senza un tuo clic.
+- Quando una sessione finisce, vedi l'ultimo messaggio di Claude e con **Apri**
+  torni alla sua finestra.
 - Funziona con Claude Desktop (tab Code), Windows Terminal, PowerShell,
   VS Code e Git Bash.
 - **Non blocca mai Claude Code.** Il relay ha 300 ms per raggiungere Coucou, poi

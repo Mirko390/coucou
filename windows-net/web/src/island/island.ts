@@ -150,6 +150,18 @@ export class Island {
       openUrl: (url) => {
         if (url) void Bridge.openUrl(url);
       },
+      // "Open" on the finished card: the session's own window when the relay
+      // found it, the project folder otherwise.
+      openSession: () => {
+        const task = State.focusTask;
+        const sessionId = task?.sessionId;
+        const cwd = task?.sessionCwd ?? null;
+        void (async () => {
+          const focused = sessionId ? await Bridge.focusSession(sessionId) : false;
+          if (!focused) await Bridge.openProject(cwd);
+        })();
+        this.collapse();
+      },
       answerInSession: () => {
         const q = State.pendingQuestion;
         if (q) void Bridge.focusSession(q.sessionId);
@@ -474,7 +486,9 @@ export class Island {
   // ── Geometry ────────────────────────────────────────────────────────────────
 
   private targetSize(): { w: number; h: number; r: number } {
-    const { w, h } = islandSize(State.mode, State.view, State.chatHistory.length, this.compactWide);
+    const { w, h } = islandSize(
+      State.mode, State.view, State.chatHistory.length, this.compactWide, State.lastReply != null,
+    );
     const r = State.mode === "expanded" ? EXPANDED_CORNER : ROUNDED_CORNER;
     return { w, h, r };
   }

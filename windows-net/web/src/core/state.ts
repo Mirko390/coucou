@@ -19,6 +19,8 @@ export interface AgentTask {
   miniEye?: EyeShape | null;
   pillBadge?: PillBadge | null;
   sessionCwd?: string | null;
+  /** Claude Code's session id, so "Open" can bring that session's window forward. */
+  sessionId?: string | null;
 }
 
 export interface ApprovalInfo {
@@ -152,6 +154,8 @@ class AppState {
    * said which window that is, so the island can offer to bring it forward.
    */
   pendingQuestion: { sessionId: string; canFocus: boolean; options: string[] } | null = null;
+  /** Claude's whole last message of the turn (Stop's last_assistant_message), for the finished card. */
+  lastReply: string | null = null;
 
   integrations: Record<string, IntegrationInfo> = {};
 

@@ -93,8 +93,11 @@ public static class HookPayload
         return new HookEvent(map.ToJsonString() + "\n", hookEvent);
     }
 
-    /// <summary>The events after which the island may offer to bring the session's window forward.</summary>
-    public static bool NeedsHost(string hookEvent) => hookEvent is "PermissionRequest" or "Notification";
+    /// <summary>
+    /// The events after which the island may offer to bring the session's window
+    /// forward: a question, a notification, and the end of a turn ("Open").
+    /// </summary>
+    public static bool NeedsHost(string hookEvent) => hookEvent is "PermissionRequest" or "Notification" or "Stop";
 
     /// <summary>Caps every string in the payload. A single Write can carry a whole file.</summary>
     public static void TruncateStrings(JsonNode? node)

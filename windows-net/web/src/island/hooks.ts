@@ -20,8 +20,10 @@ interface HookPayload {
   session_id?: string;
   cwd?: string;
   message?: string;
-  /** UserPromptSubmit carries `prompt`; `message` belongs to Notification/Stop. */
+  /** UserPromptSubmit carries `prompt`; `message` belongs to Notification. */
   prompt?: string;
+  /** Stop: the text Claude ended its turn with (capped by the relay). */
+  last_assistant_message?: string;
   tool_name?: string;
   tool_input?: Record<string, unknown>;
   /** Set by the relay with the events that wait on the person: the session's window. */
@@ -132,11 +134,24 @@ function approvalTarget(tool: string, input: Record<string, unknown>): string {
   return tool;
 }
 
-function upsert(projectName: string, cwd: string) {
+function upsert(projectName: string, cwd: string, sessionId?: string) {
   const t = State.tasks.find((x) => x.id === CLAUDE_ID);
   if (!t) return;
   t.name = projectName;
   if (cwd) t.sessionCwd = cwd;
+  if (sessionId) t.sessionId = sessionId;
+}
+
+/** Markdown marks read badly as plain text: keep the words, drop the syntax. */
+function plainText(markdown: string): string {
+  return markdown
+    .replace(/```[^\n]*\n?/g, "")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function clearSession() {
@@ -186,7 +201,8 @@ function handleHook(island: Island, payload: HookPayload) {
       break;
 
     case "UserPromptSubmit": {
-      upsert(projectName, cwd);
+      upsert(projectName, cwd, payload.session_id);
+      State.lastReply = null;
       State.updateTask(CLAUDE_ID, "thinking");
       // The field is `prompt`; reading `message` meant this step was always blank.
       const asked = payload.prompt ?? payload.message;
@@ -232,9 +248,14 @@ function handleHook(island: Island, payload: HookPayload) {
       break;
     }
 
-    case "Stop":
+    case "Stop": {
+      upsert(projectName, cwd, payload.session_id);
       State.updateTask(CLAUDE_ID, "finished");
-      if (payload.message) State.appendStep(CLAUDE_ID, payload.message.slice(0, 60));
+      // Stop has no `message`: the turn's last words are last_assistant_message.
+      // The card shows all of them (it scrolls); the ticker gets the first line.
+      const reply = plainText(payload.last_assistant_message ?? "");
+      State.lastReply = reply || null;
+      if (reply) State.appendStep(CLAUDE_ID, reply.split("\n")[0].slice(0, 60));
       Sound.play("finish");
       if (focused) surface("finished", true);
       else State.setPillBadge(CLAUDE_ID, "finished");
@@ -243,6 +264,7 @@ function handleHook(island: Island, payload: HookPayload) {
         State.setPillBadge(CLAUDE_ID, null);
       }, 5200);
       break;
+    }
 
     case "StopFailure":
       State.updateTask(CLAUDE_ID, "error");
@@ -253,6 +275,7 @@ function handleHook(island: Island, payload: HookPayload) {
 
     case "SessionEnd":
       State.updateTask(CLAUDE_ID, "idle");
+      State.lastReply = null;
       clearSession();
       break;
 

@@ -86,14 +86,14 @@ public sealed class HookPayloadTests
         var lookups = 0;
         long? Host() { lookups++; return 4242; }
 
-        foreach (var name in new[] { "PreToolUse", "PostToolUse", "Stop", "SessionStart", "UserPromptSubmit" })
+        foreach (var name in new[] { "PreToolUse", "PostToolUse", "SessionStart", "UserPromptSubmit", "SubagentStop" })
         {
             var e = HookPayload.Read(Encoding.UTF8.GetBytes($$"""{"hook_event_name":"{{name}}"}"""), "", _ => null, ".", Host)!;
             Assert.IsFalse(JsonNode.Parse(e.Line)!.AsObject().ContainsKey("host_window"), name);
         }
         Assert.AreEqual(0, lookups, "every tool call would pay for a process walk");
 
-        foreach (var name in new[] { "PermissionRequest", "Notification" })
+        foreach (var name in new[] { "PermissionRequest", "Notification", "Stop" })
         {
             var e = HookPayload.Read(Encoding.UTF8.GetBytes($$"""{"hook_event_name":"{{name}}"}"""), "", _ => null, ".", Host)!;
             Assert.AreEqual(4242L, JsonNode.Parse(e.Line)!["host_window"]!.GetValue<long>(), name);
