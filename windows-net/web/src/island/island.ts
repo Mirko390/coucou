@@ -79,6 +79,14 @@ export class Island {
   private lastFrame = 0;
   private dirty = true;
   private canvasPx = 0;
+  /**
+   * Pixel ratio the canvases were sized for. It changes while the app runs —
+   * the island moves to a display with another scale, or WebView2 applies the
+   * display's scale after the first frames — and a canvas left at the old ratio
+   * draws Mochi too big, shifted down and right, cut by the bar.
+   */
+  private canvasDpr = 0;
+  private greetingDpr = 0;
 
   // The host starts the window at full size so the launch greeting has room.
   private collapsed = false;
@@ -246,14 +254,28 @@ export class Island {
       this.countdown,
     );
 
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    this.greetingCanvas.width = Math.round(EXPANDED_W * dpr);
-    this.greetingCanvas.height = Math.round(150 * dpr);
     this.greetingCanvas.style.width = `${EXPANDED_W}px`;
     this.greetingCanvas.style.height = "150px";
 
     this.root.append(this.wakeStrip, this.islandEl);
     this.applyGeometry();
+    this.watchPixelRatio();
+  }
+
+  /**
+   * A new display scale re-sizes the canvases on the next frame (see canvasDpr).
+   * The loop may be parked, so ask for that frame rather than leave a blurry
+   * Mochi until the next animation.
+   */
+  private watchPixelRatio() {
+    matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`).addEventListener(
+      "change",
+      () => {
+        this.ensureRunning();
+        this.watchPixelRatio();
+      },
+      { once: true },
+    );
   }
 
   // ── FSM ─────────────────────────────────────────────────────────────────────
@@ -752,6 +774,11 @@ export class Island {
       const gctx = this.greetingCanvas.getContext("2d");
       if (gctx) {
         const dpr = Math.min(2, window.devicePixelRatio || 1);
+        if (this.greetingDpr !== dpr) {
+          this.greetingDpr = dpr;
+          this.greetingCanvas.width = Math.round(EXPANDED_W * dpr);
+          this.greetingCanvas.height = Math.round(150 * dpr);
+        }
         gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         this.greeting.draw(gctx);
       }
@@ -827,8 +854,9 @@ export class Island {
     const w = Math.max(1, Math.round(size));
     const hCss = w + BOT_OVERHANG;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    if (this.canvasPx !== w) {
+    if (this.canvasPx !== w || this.canvasDpr !== dpr) {
       this.canvasPx = w;
+      this.canvasDpr = dpr;
       this.botCanvas.width = Math.round(w * dpr);
       this.botCanvas.height = Math.round(hCss * dpr);
       this.botCanvas.style.width = `${w}px`;

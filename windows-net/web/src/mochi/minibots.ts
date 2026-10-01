@@ -9,6 +9,8 @@ interface MiniBot {
   engine: BotEngine;
   cssSize: number;
   taskId: string;
+  /** Pixel ratio the canvas is sized for (0 = not yet). */
+  dpr: number;
 }
 
 const live = new Map<HTMLCanvasElement, MiniBot>();
@@ -30,9 +32,6 @@ export function createMiniBot(task: AgentTask, bodySize: number): HTMLElement {
 
   const canvas = document.createElement("canvas");
   const engineSize = bodySize / 0.6;
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  canvas.width = Math.round(engineSize * dpr);
-  canvas.height = Math.round(engineSize * dpr);
   canvas.style.width = `${engineSize}px`;
   canvas.style.height = `${engineSize}px`;
   slot.append(canvas);
@@ -48,7 +47,7 @@ export function createMiniBot(task: AgentTask, bodySize: number): HTMLElement {
     engine.eyeOverrideUntil = Number.POSITIVE_INFINITY;
   }
 
-  live.set(canvas, { canvas, engine, cssSize: engineSize, taskId: task.id });
+  live.set(canvas, { canvas, engine, cssSize: engineSize, taskId: task.id, dpr: 0 });
   return slot;
 }
 
@@ -77,6 +76,13 @@ export function tickMiniBots(dt: number) {
   for (const mb of live.values()) {
     const ctx = mb.canvas.getContext("2d");
     if (!ctx) continue;
+    // Sized here rather than at creation: the pixel ratio can change while the
+    // app runs, and a canvas left at the old one draws the mini Mochi off-centre.
+    if (mb.dpr !== dpr) {
+      mb.dpr = dpr;
+      mb.canvas.width = Math.round(mb.cssSize * dpr);
+      mb.canvas.height = Math.round(mb.cssSize * dpr);
+    }
     mb.engine.update(dt);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, mb.cssSize, mb.cssSize);
