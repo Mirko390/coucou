@@ -114,7 +114,7 @@ spunta dal notch, saluta, ti segue con lo sguardo, si arrabbia se lo punzecchi
 ### Windows (questo fork)
 
 L'installer si costruisce dal codice in pochi minuti (vedi sotto):
-`.\scripts\pack.ps1` produce `Coucou-Windows-X.Y.Z-x64.msi`.
+`npm run pack` produce `Coucou-Windows-X.Y.Z-x64.msi`.
 
 1. **Apri l'MSI** con un doppio clic: installa solo per il tuo utente, senza
    password di amministratore, e avvia Coucou.
@@ -144,8 +144,12 @@ build tools (Visual Studio con "Sviluppo di applicazioni desktop con C++").
 ```powershell
 git clone https://github.com/Mirko390/coucou.git
 cd coucou\windows-net
-.\scripts\pack.ps1          # l'installer finisce in windows-net\release\
+npm install
+npm run pack                # l'installer finisce in windows-net\release\
 ```
+
+Oppure apri `windows-net\Coucou.slnx` in Visual Studio e premi F5. Tutti i
+comandi sono nel [README della versione Windows](../windows-net/README.it.md#compilarlo-da-sé).
 
 **macOS** — servono macOS 15+, Xcode 16+ e
 [XcodeGen](https://github.com/yonaskolb/XcodeGen).
