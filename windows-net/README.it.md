@@ -134,6 +134,10 @@ posto.
   si sovrappone più a metà animazione.
 - **Senza integrazioni:** se non hai servizi collegati, il riquadro principale
   occupa tutta la larghezza invece di lasciare uno spazio vuoto.
+- **Schermi ridimensionati (125%, 150%):** se la scala cambiava mentre Coucou era
+  aperto, per esempio passando dal monitor esterno al portatile, Mochi veniva
+  disegnato troppo grande, spostato in basso e tagliato dalla barra. Ora si
+  adatta da solo alla nuova scala.
 
 ## Installare
 
