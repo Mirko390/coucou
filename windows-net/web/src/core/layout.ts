@@ -106,12 +106,19 @@ export function chatPromptHeight(messageCount: number): number {
   return Math.min(300, 240 + messageCount * 40);
 }
 
-/** `wide`: the compact bar is under the mouse and shows the mini grid. */
+/** The finished card when it carries Claude's last message: room for about six lines. */
+export const FINISHED_REPLY_H = 220;
+
+/**
+ * `wide`: the compact bar is under the mouse and shows the mini grid.
+ * `reply`: the finished card has Claude's last message to show.
+ */
 export function islandSize(
   mode: IslandMode,
   view: IslandViewName,
   chatCount = 0,
   wide = false,
+  reply = false,
 ): { w: number; h: number } {
   switch (mode) {
     case "hidden":
@@ -121,7 +128,10 @@ export function islandSize(
     case "compact":
       return { w: wide ? COMPACT_W : MINI_W, h: BAR_H };
     case "expanded": {
-      const h = view === "prompt" ? chatPromptHeight(chatCount) : VIEW_LAYOUTS[view].height;
+      const h =
+        view === "prompt" ? chatPromptHeight(chatCount)
+        : view === "finished" && reply ? FINISHED_REPLY_H
+        : VIEW_LAYOUTS[view].height;
       return { w: EXPANDED_W, h };
     }
   }

@@ -163,7 +163,14 @@ whatever event Claude Code sends them with: Coucou hands them straight back, so
 the choices appear where the session runs, and the island offers **Answer in
 Claude**, which brings that window forward — Claude Desktop, a terminal, VS
 Code. The relay finds the window by walking up its own parent processes, only
-for the events that wait on the person.
+for the events that wait on the person and when a turn ends.
+
+When a turn ends, the card shows Claude's whole last message — Claude Code
+sends it as `last_assistant_message` with `Stop` — and **Open** brings the
+session's window forward, or opens the project folder when no window was found.
+Long text scrolls inside its card everywhere — the question, that message, an
+error, and the command waiting for approval, which wraps rather than ending in
+an ellipsis — while the header line and the buttons stay put.
 
 ### How the island window works
 

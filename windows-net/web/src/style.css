@@ -633,11 +633,34 @@ body {
   text-overflow: ellipsis;
 }
 
-.clamp-2 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+/*
+ * Text that may be longer than its card: it takes whatever height the card has
+ * left once the header line and the buttons are placed, and scrolls inside it.
+ */
+.stack > .scroll {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  padding-right: 6px;
+}
+
+/* Claude's last message on the finished card. */
+.reply {
+  font: 400 13px/1.4 var(--font);
+  color: var(--ink);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.code.scroll {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
 }
 
 .who-row {
