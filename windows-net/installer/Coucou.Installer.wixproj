@@ -1,0 +1,29 @@
+<Project Sdk="WixToolset.Sdk">
+
+  <!--
+    The Windows installer: a per-user MSI (no admin prompt) built from the
+    published app. `scripts/pack.ps1` publishes the app and builds this.
+
+      dotnet build installer -c Release -p:PublishDir=<published app>\
+  -->
+  <PropertyGroup>
+    <OutputName>Coucou</OutputName>
+    <OutputType>Package</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <!-- WiX notes are advisory; the C# projects keep warnings-as-errors. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!--
+      ICE38/64/91 assume a per-machine install: in a per-user one every file
+      lives in the user profile, which is the whole point.
+    -->
+    <SuppressIces>ICE38;ICE64;ICE91</SuppressIces>
+    <PublishDir Condition="'$(PublishDir)' == ''">$(MSBuildProjectDirectory)\..\artifacts\publish\win-x64\</PublishDir>
+    <DefineConstants>Version=$(Version)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+    <BindPath Include="$(PublishDir)" BindName="publish" />
+  </ItemGroup>
+
+</Project>

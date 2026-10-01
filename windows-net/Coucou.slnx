@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="app/Coucou.csproj" />
+  <Project Path="hook/CoucouHook.csproj" />
+  <Project Path="tests/Coucou.Tests.csproj" />
+</Solution>

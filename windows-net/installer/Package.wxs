@@ -1,0 +1,101 @@
+<!--
+  Coucou for Windows — per-user MSI.
+
+  Installs into %LOCALAPPDATA%\Programs\Coucou with a Start menu shortcut, and
+  starts Coucou when an interactive install finishes. No admin prompt.
+
+  Uninstalling removes what the app itself created under %LOCALAPPDATA%\Coucou:
+  the relay copy in bin\, the inbox, the log and WebView2's cache. Preferences
+  in %APPDATA%\Coucou stay, and so do the keys in the Credential Manager.
+
+  Claude Code's own settings.json is deliberately NOT touched: it belongs to the
+  user, it may contain hooks from other tools, and rewriting somebody's config
+  from an uninstaller with no diff and no consent is exactly what the rest of
+  this app goes out of its way not to do. A relay that is gone exits 0 without
+  printing anything, so a leftover entry costs nothing beyond a dead path.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Name="Coucou"
+           Manufacturer="Louis Raille"
+           Version="$(var.Version)"
+           UpgradeCode="1CFB0CCF-6560-45B7-8626-217EB2AAB07D"
+           Scope="perUser"
+           Compressed="yes">
+
+    <SummaryInformation Description="Coucou — Mochi lives at the top of your screen" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Coucou is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="CoucouIcon" SourceFile="..\app\Assets\icon.ico" />
+    <Property Id="ARPPRODUCTICON" Value="CoucouIcon" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="UserPrograms" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="Coucou" />
+      </Directory>
+      <!-- What the running app creates; only cleaned up here. -->
+      <Directory Id="DATAFOLDER" Name="Coucou" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="!(bindpath.publish)**">
+        <Exclude Files="!(bindpath.publish)**\*.pdb" />
+      </Files>
+    </ComponentGroup>
+
+    <Component Id="StartMenuShortcut" Directory="ProgramMenuFolder" Guid="708EB4CE-3F15-4EE1-82B6-0C4399671B5E">
+      <Shortcut Id="CoucouShortcut"
+                Name="Coucou"
+                Description="Mochi lives at the top of your screen"
+                Target="[INSTALLFOLDER]coucou.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RegistryValue Root="HKCU" Key="Software\Coucou" Name="shortcut" Type="integer" Value="1" KeyPath="yes" />
+      <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
+    </Component>
+
+    <!-- Folder ids are only resolved at CostFinalize, after RemoveFoldersEx has run;
+         system folders are known from the start. -->
+    <SetProperty Id="COUCOU_BIN" Value="[LocalAppDataFolder]Coucou\bin" Before="AppSearch" Sequence="execute" />
+    <SetProperty Id="COUCOU_INBOX" Value="[LocalAppDataFolder]Coucou\inbox" Before="AppSearch" Sequence="execute" />
+    <SetProperty Id="COUCOU_WEBVIEW" Value="[LocalAppDataFolder]Coucou\WebView2" Before="AppSearch" Sequence="execute" />
+
+    <Component Id="RuntimeCleanup" Directory="DATAFOLDER" Guid="5B0E3F27-6E9B-4E0E-9C0D-7A9E3C6F1D42">
+      <RegistryValue Root="HKCU" Key="Software\Coucou" Name="cleanup" Type="integer" Value="1" KeyPath="yes" />
+      <util:RemoveFolderEx Id="RemoveBin" Property="COUCOU_BIN" On="uninstall" />
+      <util:RemoveFolderEx Id="RemoveInbox" Property="COUCOU_INBOX" On="uninstall" />
+      <util:RemoveFolderEx Id="RemoveWebView" Property="COUCOU_WEBVIEW" On="uninstall" />
+      <RemoveFile Id="RemoveLog" Name="coucou.log" On="uninstall" />
+      <RemoveFolder Id="RemoveDataFolder" On="uninstall" />
+    </Component>
+
+    <!-- Coucou has to be closed before its files can be replaced or removed. -->
+    <util:CloseApplication Id="CloseCoucou"
+                           Target="coucou.exe"
+                           CloseMessage="yes"
+                           RebootPrompt="no"
+                           TerminateProcess="1"
+                           Timeout="5" />
+
+    <!-- Start Coucou at the end of an interactive install. -->
+    <SetProperty Id="WixShellExecTarget" Value="[INSTALLFOLDER]coucou.exe" After="CostFinalize" Sequence="execute" />
+    <CustomAction Id="LaunchCoucou"
+                  BinaryRef="Wix4UtilCA_$(sys.BUILDARCHSHORT)"
+                  DllEntry="WixShellExec"
+                  Impersonate="yes"
+                  Return="ignore" />
+    <InstallExecuteSequence>
+      <Custom Action="LaunchCoucou" After="InstallFinalize" Condition="NOT Installed AND NOT REMOVE AND UILevel &gt; 3" />
+    </InstallExecuteSequence>
+
+    <Feature Id="Main">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="RuntimeCleanup" />
+    </Feature>
+  </Package>
+</Wix>

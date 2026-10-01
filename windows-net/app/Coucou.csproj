@@ -1,0 +1,104 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    coucou.exe — the host: the island window, the settings window, the tray, and
+    everything that talks to the OS or the network. The island itself is the web
+    front end in ../web, rendered by WebView2.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>coucou</AssemblyName>
+    <RootNamespace>Coucou</RootNamespace>
+    <Description>Coucou for Windows — Mochi lives at the top of your screen</Description>
+    <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationVisualStyles>true</ApplicationVisualStyles>
+
+    <!-- Ship the WebView2 assembly, not its 600 KB of IntelliSense XML. -->
+    <AllowedReferenceRelatedFileExtensions>.pdb</AllowedReferenceRelatedFileExtensions>
+
+    <WebDir>$(MSBuildProjectDirectory)\..\web\</WebDir>
+    <HookProject>$(MSBuildProjectDirectory)\..\hook\CoucouHook.csproj</HookProject>
+    <HookPublishDir>$(BaseIntermediateOutputPath)hook-publish\</HookPublishDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+  </ItemGroup>
+
+  <!--
+    The WebView2 package references its WPF and WinForms controls whatever the
+    project is. We host CoreWebView2Controller directly, so neither is needed,
+    and the WPF one drags in a WindowsBase version conflict.
+  -->
+  <Target Name="DropWebView2Controls" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <Reference Remove="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Wpf' or '%(Filename)' == 'Microsoft.Web.WebView2.WinForms'" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <Compile Include="..\shared\RelayPipeName.cs" Link="Shared\RelayPipeName.cs" />
+    <EmbeddedResource Include="Assets\icon.ico" LogicalName="Coucou.icon.ico" />
+  </ItemGroup>
+
+  <!--
+    The island's pages. `npm run build` in ../web produces dist/, which ships as
+    wwwroot/ next to coucou.exe. Rebuilt whenever a source changed; pass
+    -p:SkipWeb=true to leave it alone (and run coucou.exe with the dev flag and Vite).
+  -->
+  <ItemGroup>
+    <WebSource Include="$(WebDir)src\**\*;$(WebDir)*.html;$(WebDir)vite.config.ts;$(WebDir)package.json;$(WebDir)tsconfig.json" />
+  </ItemGroup>
+
+  <Target Name="BuildWeb" BeforeTargets="AssignTargetPaths" Condition="'$(SkipWeb)' != 'true'"
+          Inputs="@(WebSource)" Outputs="$(WebDir)dist\index.html">
+    <Exec Command="npm ci" WorkingDirectory="$(WebDir)" Condition="!Exists('$(WebDir)node_modules')" />
+    <Exec Command="npm run build" WorkingDirectory="$(WebDir)" />
+  </Target>
+
+  <Target Name="IncludeWeb" AfterTargets="BuildWeb" BeforeTargets="AssignTargetPaths">
+    <ItemGroup>
+      <_WebPage Include="$(WebDir)dist\**\*" />
+      <Content Include="@(_WebPage)"
+               Link="wwwroot\%(_WebPage.RecursiveDir)%(_WebPage.Filename)%(_WebPage.Extension)"
+               CopyToOutputDirectory="PreserveNewest"
+               CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+  </Target>
+
+  <!--
+    coucou-hook.exe has to be a single native exe (it is copied on its own into
+    %LOCALAPPDATA%\Coucou\bin), so it is always AOT-published, even for a Debug
+    app, and placed next to coucou.exe. Incremental: it only re-runs when the
+    relay's sources change. Pass -p:SkipHook=true to build without the MSVC linker.
+
+    vswhere has to be on PATH: the ILCompiler finds link.exe through vcvarsall,
+    which calls vswhere by name.
+  -->
+  <ItemGroup>
+    <HookSource Include="..\hook\**\*.cs;..\hook\*.csproj;..\shared\**\*.cs" Exclude="..\hook\obj\**;..\hook\bin\**" />
+  </ItemGroup>
+
+  <Target Name="PublishHook" AfterTargets="Build" Condition="'$(SkipHook)' != 'true'"
+          Inputs="@(HookSource)" Outputs="$(HookPublishDir)coucou-hook.exe">
+    <PropertyGroup>
+      <HookRid Condition="'$(PROCESSOR_ARCHITECTURE)' == 'ARM64'">win-arm64</HookRid>
+      <HookRid Condition="'$(HookRid)' == ''">win-x64</HookRid>
+      <HookRid Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</HookRid>
+    </PropertyGroup>
+    <Exec Command="dotnet publish &quot;$(HookProject)&quot; -c Release -r $(HookRid) -o &quot;$(HookPublishDir.TrimEnd('\'))&quot; -nologo"
+          EnvironmentVariables="PATH=$(PATH.Replace(';', '%3B'))%3B$(MSBuildProgramFiles32)\Microsoft Visual Studio\Installer" />
+  </Target>
+
+  <Target Name="CopyHook" AfterTargets="PublishHook" Condition="'$(SkipHook)' != 'true'">
+    <Copy SourceFiles="$(HookPublishDir)coucou-hook.exe" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="PublishHookToPublishDir" AfterTargets="Publish" Condition="'$(SkipHook)' != 'true'">
+    <Copy SourceFiles="$(HookPublishDir)coucou-hook.exe" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

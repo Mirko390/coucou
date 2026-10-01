@@ -135,6 +135,7 @@ The macOS app is native Swift 6 / SwiftUI / AppKit with **zero third-party depen
 - A [Tauri 2](https://tauri.app) app (Rust + TypeScript): the island is a transparent, always-on-top window that never steals focus, Mochi is drawn in Canvas 2D with the same shapes, timings and sounds as on the Mac.
 - Claude Code hooks go through a tiny `coucou-hook.exe` and a named pipe; keys live in Windows Credential Manager.
 - Details and differences in [`windows/README.md`](windows/README.md).
+- A .NET rewrite of the host — C# with WebView2, the same island, a Native AOT relay — lives alongside it in [`windows-net/`](windows-net/README.md).
 
 ## Contributing
 

@@ -1,0 +1,31 @@
+<Project Sdk="MSTest.Sdk">
+
+  <!--
+    The host's logic, tested without its windows. The sources are compiled in
+    directly rather than through a reference to coucou.exe, so `dotnet test`
+    needs neither npm (the pages) nor the MSVC linker (the AOT relay).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>Coucou.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\app\Chat\ClaudeChat.cs" Link="App\ClaudeChat.cs" />
+    <Compile Include="..\app\Files\Inbox.cs" Link="App\Inbox.cs" />
+    <Compile Include="..\app\Hooks\ClaudeHooks.cs" Link="App\ClaudeHooks.cs" />
+    <Compile Include="..\app\Hooks\JsonText.cs" Link="App\JsonText.cs" />
+    <Compile Include="..\app\Integrations\Pollers.cs" Link="App\Pollers.cs" />
+    <Compile Include="..\app\JsonAccess.cs" Link="App\JsonAccess.cs" />
+    <Compile Include="..\app\Launcher.cs" Link="App\Launcher.cs" />
+    <Compile Include="..\app\Loc.cs" Link="App\Loc.cs" />
+    <Compile Include="..\app\Log.cs" Link="App\Log.cs" />
+    <Compile Include="..\app\Paths.cs" Link="App\Paths.cs" />
+    <Compile Include="..\app\Secrets.cs" Link="App\Secrets.cs" />
+    <Compile Include="..\app\Settings.cs" Link="App\Settings.cs" />
+    <Compile Include="..\app\UserFacingException.cs" Link="App\UserFacingException.cs" />
+    <Compile Include="..\hook\HookPayload.cs" Link="Hook\HookPayload.cs" />
+  </ItemGroup>
+
+</Project>

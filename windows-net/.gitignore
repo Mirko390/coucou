@@ -1,0 +1,15 @@
+bin/
+obj/
+release/
+artifacts/
+*.user
+.vs/
+
+web/node_modules/
+web/dist/
+*.tsbuildinfo
+
+# Local secrets and overrides — never committed.
+.env
+.env.*
+!.env.example

@@ -7,6 +7,7 @@ Coucou is a native macOS app: Mochi, a small animated character living in the Ma
 - `docs/SPEC.md`, `docs/INTEGRATIONS.md` — behaviour, views, states, integrations (in French).
 - `design/prototype/notch-buddy.html` — original prototype, the visual source of truth. `design/captures/` — target screenshots.
 - `docs/*.html` — the GitHub Pages site (privacy, terms, support, legal notice).
+- `windows/` — the Windows build in Tauri (Rust + TypeScript). `windows-net/` — its .NET rewrite (C# host, WebView2, Native AOT relay, same `web/` front end); see `windows-net/README.md`.
 
 ## Build
 ```

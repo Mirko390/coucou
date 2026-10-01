@@ -1,0 +1,55 @@
+name: Windows (.NET)
+
+# Builds and tests the .NET Windows app on every change to windows-net/, and
+# packs the installer. Tags like `windows-net-v0.2.0` also check that the tag
+# and Directory.Build.props agree. Nothing is published: the Tauri build's
+# workflow (windows.yml) still owns releases until this one replaces it.
+
+on:
+  push:
+    branches: [main]
+    paths: ['windows-net/**', '.github/workflows/windows-net.yml']
+    tags: ['windows-net-v*']
+  pull_request:
+    branches: [main]
+    paths: ['windows-net/**', '.github/workflows/windows-net.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: windows-net
+        shell: pwsh
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: windows-net/global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: windows-net/web/package-lock.json
+
+      - name: Check the tag and the version agree
+        if: startsWith(github.ref, 'refs/tags/windows-net-v')
+        run: |
+          $tag = "${{ github.ref_name }}" -replace '^windows-net-v', ''
+          $version = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          if ($tag -ne $version) { throw "tag says $tag but Directory.Build.props says $version" }
+
+      - name: Test
+        run: dotnet test --project tests
+
+      - name: Pack
+        run: |
+          ./scripts/pack.ps1
+          Get-ChildItem release | Format-Table Name, Length
