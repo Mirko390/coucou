@@ -49,6 +49,10 @@ con la stessa isola, lo stesso Mochi e gli stessi suoni.
 - ❓ **Domande con più scelte:** quando Claude ti propone delle opzioni, l'isola
   te le mostra e il pulsante **Rispondi in Claude** porta in primo piano la
   finestra della sessione: Claude Desktop, il terminale o VS Code.
+- 🏁 **Fine sessione:** l'isola mostra l'ultimo messaggio di Claude per intero,
+  e **Apri** ti riporta alla finestra della sessione.
+- 📜 **Testi lunghi che scorrono** invece di essere tagliati: domande, messaggi,
+  errori e il comando da approvare, che ora si legge tutto.
 - ⏱️ **Chiusura automatica** a 3, 5 o 10 secondi.
 - 🔋 **0 % di CPU** quando l'isola è nascosta, più alcune correzioni grafiche.
 - ✅ **43 test automatici** e un workflow GitHub Actions che compila l'installer.
@@ -73,8 +77,8 @@ spunta dal notch, saluta, ti segue con lo sguardo, si arrabbia se lo punzecchi
 - ✅ **Approvi dall'isola:** le richieste di permesso di Claude Code arrivano con
   **Consenti / Nega**. Un clic e torni al lavoro.
 - 🧑‍💻 **La finestra giusta:** su macOS apre la finestra del terminale della
-  sessione; su Windows **Rispondi in Claude** porta in primo piano la finestra
-  della sessione quando Claude ti fa una domanda.
+  sessione; su Windows **Rispondi in Claude** e **Apri** portano in primo piano
+  la finestra della sessione quando Claude ti fa una domanda o ha finito.
 - 💬 **Chiedi a Claude:** una chat integrata, direttamente dall'isola.
 - 📎 **Trascini un file sull'isola:** Mochi diventa una scatola e lo ingoia,
   poi puoi fare domande sul file o, su macOS, mandarlo per email con Mail.
